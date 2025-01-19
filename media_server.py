@@ -63,73 +63,156 @@ def dashboard():
 
     # List files in the media folder
     files = os.listdir('media')
-    files_list_html = ''.join(f'<li><a href="{url_for("media", filename=file)}">{file}</a></li>' for file in files)
+    files_list_html = ''.join(f'<li><a href="{url_for("media", filename=file)}" target="_blank">{file}</a></li>' for file in files if file.endswith(('.mp4', '.avi', '.mov', '.mkv')))
     return render_template_string('''
-        <h1>Dashboard</h1>
-        <form id="upload-form" method="post" enctype="multipart/form-data">
-            <input type="file" id="file" name="file" required>
-            <button type="submit">Subir Archivo</button>
-        </form>
-        <div id="progress-container" style="display:none;">
-            <p>Subiendo archivo...</p>
-            <progress id="progress" value="0" max="100" style="width: 100%;"></progress>
-        </div>
-        <ul>
-            {{ files }}
-        </ul>
-        <a href="{{ url_for('logout') }}">Logout</a>
-        {% with messages = get_flashed_messages(with_categories=True) %}
-        {% if messages %}
-            <ul>
-            {% for category, message in messages %}
-                <li><strong>{{ category }}</strong>: {{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-        {% endwith %}
-        <script>
-            const uploadForm = document.getElementById('upload-form');
-            const fileInput = document.getElementById('file');
-            const progressContainer = document.getElementById('progress-container');
-            const progressBar = document.getElementById('progress');
-            
-            uploadForm.onsubmit = function(event) {
-                event.preventDefault(); // Prevent form submission
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Dashboard</title>
+            <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f5f5f5;
+                    margin: 0;
+                    padding: 0;
+                }
+                header {
+                    background-color: #333;
+                    color: white;
+                    padding: 15px 20px;
+                    text-align: center;
+                }
+                .container {
+                    max-width: 1200px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background-color: white;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                    border-radius: 8px;
+                }
+                .btn {
+                    padding: 10px 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+                .btn:hover {
+                    background-color: #45a049;
+                }
+                .upload-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    margin-bottom: 30px;
+                }
+                #progress-container {
+                    width: 100%;
+                    margin-top: 20px;
+                    display: none;
+                }
+                progress {
+                    width: 100%;
+                    height: 20px;
+                    border-radius: 10px;
+                }
+                .file-list {
+                    list-style-type: none;
+                    padding: 0;
+                }
+                .file-list li {
+                    margin: 10px 0;
+                    font-size: 16px;
+                }
+                video {
+                    width: 100%;
+                    max-width: 600px;
+                    margin-top: 20px;
+                }
+                footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    padding: 10px;
+                    background-color: #333;
+                    color: white;
+                }
+            </style>
+        </head>
+        <body>
+            <header>
+                <h1>Dashboard</h1>
+            </header>
+            <div class="container">
+                <div class="upload-container">
+                    <form id="upload-form" method="post" enctype="multipart/form-data">
+                        <input type="file" id="file" name="file" required>
+                        <button class="btn" type="submit">Subir Archivo</button>
+                    </form>
+                    <div id="progress-container">
+                        <p>Subiendo archivo...</p>
+                        <progress id="progress" value="0" max="100"></progress>
+                        <p id="percent">0%</p>
+                    </div>
+                </div>
+                <h2>Archivos Disponibles</h2>
+                <ul class="file-list">
+                    {{ files }}
+                </ul>
+                <a href="{{ url_for('logout') }}" class="btn">Logout</a>
+            </div>
+            <footer>
+                <p>&copy; 2025 Multimedia Server</p>
+            </footer>
+            <script>
+                const uploadForm = document.getElementById('upload-form');
+                const fileInput = document.getElementById('file');
+                const progressContainer = document.getElementById('progress-container');
+                const progressBar = document.getElementById('progress');
+                const percentText = document.getElementById('percent');
+                
+                uploadForm.onsubmit = function(event) {
+                    event.preventDefault(); // Prevent form submission
 
-                const file = fileInput.files[0];
-                const formData = new FormData();
-                formData.append("file", file);
+                    const file = fileInput.files[0];
+                    const formData = new FormData();
+                    formData.append("file", file);
 
-                // Show progress container
-                progressContainer.style.display = 'block';
+                    // Show progress container
+                    progressContainer.style.display = 'block';
 
-                // Upload the file using AJAX (XMLHttpRequest)
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", "{{ url_for('dashboard') }}", true);
+                    // Upload the file using AJAX (XMLHttpRequest)
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("POST", "{{ url_for('dashboard') }}", true);
 
-                // Update progress bar
-                xhr.upload.onprogress = function(event) {
-                    if (event.lengthComputable) {
-                        const percent = (event.loaded / event.total) * 100;
-                        progressBar.value = percent;
-                    }
+                    // Update progress bar
+                    xhr.upload.onprogress = function(event) {
+                        if (event.lengthComputable) {
+                            const percent = (event.loaded / event.total) * 100;
+                            progressBar.value = percent;
+                            percentText.textContent = `${Math.round(percent)}%`;
+                        }
+                    };
+
+                    // On complete
+                    xhr.onload = function() {
+                        if (xhr.status == 200) {
+                            alert("Archivo cargado con éxito.");
+                        } else {
+                            alert("Hubo un error al cargar el archivo.");
+                        }
+                        // Hide progress bar after completion
+                        progressContainer.style.display = 'none';
+                    };
+
+                    // Send the request with the form data
+                    xhr.send(formData);
                 };
-
-                // On complete
-                xhr.onload = function() {
-                    if (xhr.status == 200) {
-                        alert("Archivo cargado con éxito.");
-                    } else {
-                        alert("Hubo un error al cargar el archivo.");
-                    }
-                    // Hide progress bar after completion
-                    progressContainer.style.display = 'none';
-                };
-
-                // Send the request with the form data
-                xhr.send(formData);
-            };
-        </script>
+            </script>
+        </body>
+        </html>
     ''', files=files_list_html)
 
 @app.route('/media/<path:filename>')
