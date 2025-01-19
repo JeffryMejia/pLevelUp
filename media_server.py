@@ -139,11 +139,40 @@ def dashboard():
                     gap: 10px;
                     margin-bottom: 20px;
                 }
-                .preview-container img {
-                    width: 150px;
-                    height: 150px;
-                    object-fit: cover;
+                .preview-container div {
+                    position: relative;
+                    width: 80px;
+                    height: 80px;
+                    overflow: hidden;
                     border-radius: 8px;
+                }
+                .preview-container img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                .preview-container span {
+                    display: block;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #666;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .remove-btn {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    padding: 5px;
+                    cursor: pointer;
+                }
+                .remove-btn:hover {
+                    background-color: rgba(255, 0, 0, 0.7);
                 }
                 footer {
                     text-align: center;
@@ -187,12 +216,14 @@ def dashboard():
                 const progressBar = document.getElementById('progress');
                 const percentText = document.getElementById('percent');
                 const uploadForm = document.getElementById('upload-form');
+                let selectedFiles = [];
 
                 fileInput.addEventListener('change', function(event) {
                     previewContainer.innerHTML = '';
                     const files = event.target.files;
 
                     for (const file of files) {
+                        selectedFiles.push(file);
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const fileUrl = e.target.result;
@@ -202,15 +233,26 @@ def dashboard():
                             if (fileType === 'image') {
                                 previewElement = document.createElement('img');
                                 previewElement.src = fileUrl;
-                            } else if (fileType === 'video') {
-                                previewElement = document.createElement('video');
-                                previewElement.src = fileUrl;
-                                previewElement.controls = true;
+                            } else {
+                                previewElement = document.createElement('span');
+                                previewElement.textContent = `${file.name.substring(0, 8)}...${file.name.slice(-4)}`;
                             }
 
                             const previewDiv = document.createElement('div');
                             previewDiv.appendChild(previewElement);
-                            previewDiv.classList.add('preview');
+
+                            const removeButton = document.createElement('button');
+                            removeButton.textContent = 'X';
+                            removeButton.classList.add('remove-btn');
+                            removeButton.onclick = function() {
+                                const index = selectedFiles.indexOf(file);
+                                if (index > -1) {
+                                    selectedFiles.splice(index, 1);
+                                }
+                                previewDiv.remove();
+                            };
+
+                            previewDiv.appendChild(removeButton);
                             previewContainer.appendChild(previewDiv);
                         };
                         reader.readAsDataURL(file);
@@ -221,10 +263,9 @@ def dashboard():
                     event.preventDefault(); // Prevent form submission
 
                     const formData = new FormData();
-                    const files = fileInput.files;
-                    for (let i = 0; i < files.length; i++) {
-                        formData.append('file', files[i]);
-                    }
+                    selectedFiles.forEach(file => {
+                        formData.append('file', file);
+                    });
 
                     // Show progress container
                     progressContainer.style.display = 'block';
@@ -237,18 +278,16 @@ def dashboard():
                         if (event.lengthComputable) {
                             const percent = (event.loaded / event.total) * 100;
                             progressBar.value = percent;
-                            percentText.textContent = `${Math.round(percent)}%`;
+                            percentText.textContent = Math.round(percent) + '%';
                         }
                     };
 
-                    // On complete
                     xhr.onload = function() {
-                        if (xhr.status == 200) {
-                            alert("Archivos cargados con éxito.");
+                        if (xhr.status === 200) {
+                            alert('Archivos subidos con éxito');
                         } else {
-                            alert("Hubo un error al cargar los archivos.");
+                            alert('Hubo un error al subir los archivos');
                         }
-                        progressContainer.style.display = 'none';
                     };
 
                     xhr.send(formData);
@@ -258,10 +297,9 @@ def dashboard():
         </html>
     ''', files=files_list_html)
 
-@app.route('/media/<path:filename>')
-@login_required
+@app.route('/media/<filename>')
 def media(filename):
     return send_from_directory('media', filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0')
