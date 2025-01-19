@@ -148,7 +148,7 @@ def dashboard():
             <div class="container">
                 <div class="upload-container">
                     <form id="upload-form" method="post" enctype="multipart/form-data">
-                        <input type="file" id="file" name="file" required>
+                        <input type="file" id="file" name="file" multiple required>
                         <button class="btn" type="submit">Subir Archivo</button>
                     </form>
                     <div id="progress-container">
