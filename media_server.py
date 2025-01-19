@@ -52,18 +52,19 @@ def logout():
 @login_required
 def dashboard():
     if request.method == 'POST':
-        # Handle file upload
-        file = request.files.get('file')
-        if file and file.filename:
-            filepath = os.path.join('media', file.filename)
-            file.save(filepath)
-            flash(f"Archivo '{file.filename}' cargado con éxito.", "success")
-        else:
-            flash("No se seleccionó un archivo válido.", "error")
+        files = request.files.getlist('file')
+        for file in files:
+            if file and file.filename:
+                filepath = os.path.join('media', file.filename)
+                file.save(filepath)
+                flash(f"Archivo '{file.filename}' cargado con éxito.", "success")
+            else:
+                flash("No se seleccionó un archivo válido.", "error")
 
     # List files in the media folder
     files = os.listdir('media')
-    files_list_html = ''.join(f'<li><a href="{url_for("media", filename=file)}" target="_blank">{file}</a></li>' for file in files if file.endswith(('.mp4', '.avi', '.mov', '.mkv')))
+    files_list_html = ''.join(f'<li><a href="{url_for("media", filename=file)}" target="_blank">{file}</a></li>' for file in files)
+    
     return render_template_string('''
         <!DOCTYPE html>
         <html lang="es">
@@ -132,6 +133,18 @@ def dashboard():
                     max-width: 600px;
                     margin-top: 20px;
                 }
+                .preview-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin-bottom: 20px;
+                }
+                .preview-container img {
+                    width: 150px;
+                    height: 150px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                }
                 footer {
                     text-align: center;
                     margin-top: 30px;
@@ -149,8 +162,9 @@ def dashboard():
                 <div class="upload-container">
                     <form id="upload-form" method="post" enctype="multipart/form-data">
                         <input type="file" id="file" name="file" multiple required>
-                        <button class="btn" type="submit">Subir Archivo</button>
+                        <button class="btn" type="submit">Subir Archivos</button>
                     </form>
+                    <div id="preview-container" class="preview-container"></div>
                     <div id="progress-container">
                         <p>Subiendo archivo...</p>
                         <progress id="progress" value="0" max="100"></progress>
@@ -167,23 +181,54 @@ def dashboard():
                 <p>&copy; 2025 Multimedia Server</p>
             </footer>
             <script>
-                const uploadForm = document.getElementById('upload-form');
                 const fileInput = document.getElementById('file');
+                const previewContainer = document.getElementById('preview-container');
                 const progressContainer = document.getElementById('progress-container');
                 const progressBar = document.getElementById('progress');
                 const percentText = document.getElementById('percent');
-                
+                const uploadForm = document.getElementById('upload-form');
+
+                fileInput.addEventListener('change', function(event) {
+                    previewContainer.innerHTML = '';
+                    const files = event.target.files;
+
+                    for (const file of files) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const fileUrl = e.target.result;
+                            const fileType = file.type.split('/')[0];
+
+                            let previewElement;
+                            if (fileType === 'image') {
+                                previewElement = document.createElement('img');
+                                previewElement.src = fileUrl;
+                            } else if (fileType === 'video') {
+                                previewElement = document.createElement('video');
+                                previewElement.src = fileUrl;
+                                previewElement.controls = true;
+                            }
+
+                            const previewDiv = document.createElement('div');
+                            previewDiv.appendChild(previewElement);
+                            previewDiv.classList.add('preview');
+                            previewContainer.appendChild(previewDiv);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
                 uploadForm.onsubmit = function(event) {
                     event.preventDefault(); // Prevent form submission
 
-                    const file = fileInput.files[0];
                     const formData = new FormData();
-                    formData.append("file", file);
+                    const files = fileInput.files;
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('file', files[i]);
+                    }
 
                     // Show progress container
                     progressContainer.style.display = 'block';
 
-                    // Upload the file using AJAX (XMLHttpRequest)
                     const xhr = new XMLHttpRequest();
                     xhr.open("POST", "{{ url_for('dashboard') }}", true);
 
@@ -199,15 +244,13 @@ def dashboard():
                     // On complete
                     xhr.onload = function() {
                         if (xhr.status == 200) {
-                            alert("Archivo cargado con éxito.");
+                            alert("Archivos cargados con éxito.");
                         } else {
-                            alert("Hubo un error al cargar el archivo.");
+                            alert("Hubo un error al cargar los archivos.");
                         }
-                        // Hide progress bar after completion
                         progressContainer.style.display = 'none';
                     };
 
-                    // Send the request with the form data
                     xhr.send(formData);
                 };
             </script>
