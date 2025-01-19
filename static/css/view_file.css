@@ -1,0 +1,40 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgb(61, 61, 69);
+    margin: 0;
+    color: white;
+}
+
+@media screen and (prefers-color-scheme: light) {
+    body {
+        background-color: white;
+        color: black;
+    }
+}
+
+.viewer {
+    margin: 5px;
+    text-align: center;
+}
+
+.viewer img,
+.viewer video {
+    max-width: 95%;
+    max-height: 90vh;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+}
+
+.controls {
+    /* margin-top: 5px; */
+}
+
+.controls .btn {
+    margin: 0 5px;
+    text-decoration: none;
+    font-size: 20px;
+}

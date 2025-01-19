@@ -35,11 +35,64 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
     return '''
-        <form method="post">
-            <input type="text" name="username" placeholder="Username">
-            <input type="password" name="password" placeholder="Password">
-            <button type="submit">Login</button>
-        </form>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login</title>
+        <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+                color: white;
+            }
+            .login-container {
+                background: white;
+                color: #333;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                text-align: center;
+            }
+            input {
+                width: 100%;
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+            button {
+                width: 100%;
+                padding: 10px;
+                background: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            button:hover {
+                background: #388E3C;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-container">
+            <h2>Iniciar Sesión</h2>
+            <form method="post">
+                <input type="text" name="username" placeholder="Usuario" required>
+                <input type="password" name="password" placeholder="Contraseña" required>
+                <button type="submit">Acceder</button>
+            </form>
+        </div>
+    </body>
+    </html>
     '''
 
 @app.route('/logout')
@@ -58,13 +111,11 @@ def dashboard():
                 filepath = os.path.join('media', file.filename)
                 file.save(filepath)
                 flash(f"Archivo '{file.filename}' cargado con éxito.", "success")
-            else:
-                flash("No se seleccionó un archivo válido.", "error")
 
     # List files in the media folder
     files = os.listdir('media')
     files_list_html = ''.join(f'<li><a href="{url_for("media", filename=file)}" target="_blank">{file}</a></li>' for file in files)
-    
+
     return render_template_string('''
         <!DOCTYPE html>
         <html lang="es">
@@ -74,7 +125,7 @@ def dashboard():
             <title>Dashboard</title>
             <style>
                 body {
-                    font-family: 'Arial', sans-serif;
+                    font-family: Arial, sans-serif;
                     background-color: #f5f5f5;
                     margin: 0;
                     padding: 0;
@@ -110,16 +161,6 @@ def dashboard():
                     align-items: center;
                     margin-bottom: 30px;
                 }
-                #progress-container {
-                    width: 100%;
-                    margin-top: 20px;
-                    display: none;
-                }
-                progress {
-                    width: 100%;
-                    height: 20px;
-                    border-radius: 10px;
-                }
                 .file-list {
                     list-style-type: none;
                     padding: 0;
@@ -128,51 +169,25 @@ def dashboard():
                     margin: 10px 0;
                     font-size: 16px;
                 }
-                video {
-                    width: 100%;
-                    max-width: 600px;
-                    margin-top: 20px;
-                }
-                .preview-container {
+                .progress-bar {
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                    margin-bottom: 20px;
+                    flex-direction: column;
+                    align-items: center;
                 }
-                .preview-container div {
-                    position: relative;
-                    width: 80px;
-                    height: 80px;
-                    overflow: hidden;
-                    border-radius: 8px;
-                }
-                .preview-container img {
+                .progress-bar div {
                     width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-                .preview-container span {
-                    display: block;
-                    text-align: center;
-                    font-size: 12px;
-                    color: #666;
-                    white-space: nowrap;
+                    height: 10px;
+                    background: #ccc;
+                    border-radius: 5px;
                     overflow: hidden;
-                    text-overflow: ellipsis;
+                    margin-bottom: 5px;
                 }
-                .remove-btn {
-                    position: absolute;
-                    top: 5px;
-                    right: 5px;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    color: white;
-                    border: none;
-                    border-radius: 50%;
-                    padding: 5px;
-                    cursor: pointer;
-                }
-                .remove-btn:hover {
-                    background-color: rgba(255, 0, 0, 0.7);
+                .progress-bar div span {
+                    display: block;
+                    height: 100%;
+                    background: #4CAF50;
+                    width: 0;
+                    transition: width 0.3s;
                 }
                 footer {
                     text-align: center;
@@ -193,12 +208,7 @@ def dashboard():
                         <input type="file" id="file" name="file" multiple required>
                         <button class="btn" type="submit">Subir Archivos</button>
                     </form>
-                    <div id="preview-container" class="preview-container"></div>
-                    <div id="progress-container">
-                        <p>Subiendo archivo...</p>
-                        <progress id="progress" value="0" max="100"></progress>
-                        <p id="percent">0%</p>
-                    </div>
+                    <ul id="preview-container" class="file-list"></ul>
                 </div>
                 <h2>Archivos Disponibles</h2>
                 <ul class="file-list">

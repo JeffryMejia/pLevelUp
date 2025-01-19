@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/view_file.css') }}">
+    <title>Vista del archivo</title>
+</head>
+<body>
+    
+    <div class="controls">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn">🏠</a>
+        <a href="{{ url_for('view_file', filename=filename) }}" class="btn">🔄</a>
+        <a href="{{ request.referrer }}" class="btn">🔙</a>
+    </div>
+    <div class="viewer">
+        {% if filename.split('.')[-1] in ['jpg', 'jpeg', 'png', 'gif'] %}
+        <img src="{{ url_for('media', filename=filename) }}" alt="Imagen">
+        {% elif filename.split('.')[-1] in ['mp4', 'webm', 'ogg'] %}
+        <video controls>
+            <source src="{{ url_for('media', filename=filename) }}" type="video/{{ filename.split('.')[-1] }}">
+            Tu navegador no soporta la reproducción de este video.
+        </video>
+        {% else %}
+        <p>Tipo de archivo no soportado para vista previa.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Lista de Archivos</title>
+</head>
+<body>
+    <header>
+        <h1>Archivos Disponibles</h1>
+    </header>
+    <div class="container">
+        <ul>
+            {% for file in files %}
+            <li>
+                <a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('upload_files') }}">Subir Archivos</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <title>Dashboard</title>
+</head>
+
+<body>
+    <header>
+        <h1>Dashboard</h1>
+    </header>
+    <div class="container">
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file" multiple>
+            <button type="submit">Subir</button>
+        </form>
+        <ul>
+            {% for file in files %}
+            <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        const fileInput = document.getElementById('file');
+        const previewContainer = document.getElementById('preview-container');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress');
+        const percentText = document.getElementById('percent');
+        const uploadForm = document.getElementById('upload-form');
+        let selectedFiles = [];
+
+        fileInput.addEventListener('change', function (event) {
+            previewContainer.innerHTML = '';
+            const files = event.target.files;
+
+            for (const file of files) {
+                selectedFiles.push(file);
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const fileUrl = e.target.result;
+                    const fileType = file.type.split('/')[0];
+
+                    let previewElement;
+                    if (fileType === 'image') {
+                        previewElement = document.createElement('img');
+                        previewElement.src = fileUrl;
+                    } else {
+                        previewElement = document.createElement('span');
+                        previewElement.textContent = `${file.name.substring(0, 8)}...${file.name.slice(-4)}`;
+                    }
+
+                    const previewDiv = document.createElement('div');
+                    previewDiv.appendChild(previewElement);
+
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'X';
+                    removeButton.classList.add('remove-btn');
+                    removeButton.onclick = function () {
+                        const index = selectedFiles.indexOf(file);
+                        if (index > -1) {
+                            selectedFiles.splice(index, 1);
+                        }
+                        previewDiv.remove();
+                    };
+
+                    previewDiv.appendChild(removeButton);
+                    previewContainer.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        uploadForm.onsubmit = function (event) {
+            event.preventDefault(); // Prevent form submission
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('file', file);
+            });
+
+            // Show progress container
+            progressContainer.style.display = 'block';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "{{ url_for('dashboard.dashboard') }}", true);
+
+            // Update progress bar
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const percent = (event.loaded / event.total) * 100;
+                    progressBar.value = percent;
+                    percentText.textContent = Math.round(percent) + '%';
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    alert('Archivos subidos con éxito');
+                } else {
+                    alert('Hubo un error al subir los archivos');
+                }
+            };
+
+            xhr.send(formData);
+        };
+    </script>
+</body>
+
+</html>
